@@ -18,6 +18,8 @@ local defaults = {
     minimapAngle = 225,  -- degrees around the minimap, 0 = right, 90 = top
     rateWindow = 600,    -- seconds of history the XP rate uses; 0 = whole session
     showKills = true,
+    style = "panel",     -- "panel" (floating), "bar" (across the top) or "bottom"
+    pushUI = true,       -- move default UI down to make room for the bar
 }
 
 -- A session ends after this long without gaining XP, or this long logged out.
@@ -148,18 +150,45 @@ function ns.Print(msg)
     DEFAULT_CHAT_FRAME:AddMessage("|cff5c8cffTally|r: " .. msg)
 end
 
-function ns.SetPanelShown(shown)
+-- The display for the chosen style: the floating panel or the top bar.
+function ns.ActiveDisplay()
+    return ns.db.style == "panel" and ns.panel or ns.bar
+end
+
+-- Show the active display (if not hidden by the player) and hide the other.
+function ns.UpdateDisplay()
+    local active = ns.ActiveDisplay()
+    local other = (active == ns.bar) and ns.panel or ns.bar
+    other:Hide()
+    ns.PositionBar()
+    active:SetShown(ns.db.shown)
+    ns.UpdateUIPush()
+end
+
+function ns.SetDisplayShown(shown)
     ns.db.shown = shown
-    ns.frame:SetShown(shown)
+    ns.UpdateDisplay()
+    ns.Refresh()
+end
+
+function ns.Refresh()
+    if not ns.db or not ns.session.start then return end
+    if ns.db.style ~= "panel" then
+        ns.RefreshBar()
+    else
+        ns.RefreshPanel()
+    end
 end
 
 -- Called by the options page whenever a setting changes.
 function ns.OnSettingChanged(key)
     if key == "showMinimap" then
         ns.UpdateMinimapButton()
-    else
-        ns.Refresh()
+        return
+    elseif key == "style" or key == "pushUI" then
+        ns.UpdateDisplay()
     end
+    ns.Refresh()
 end
 
 ---------------------------------------------------------------------------
@@ -245,9 +274,9 @@ events:SetScript("OnEvent", function(self, event, arg1)
         TallyCharDB = TallyCharDB or {}
         TallyCharDB.session = TallyCharDB.session or {}
         ns.session = TallyCharDB.session
-        ns.frame:ClearAllPoints()
-        ns.frame:SetPoint(unpack(ns.db.point))
-        ns.frame:SetShown(ns.db.shown)
+        ns.panel:ClearAllPoints()
+        ns.panel:SetPoint(unpack(ns.db.point))
+        ns.UpdateDisplay()
         ns.UpdateMinimapButton()
         self:UnregisterEvent("ADDON_LOADED")
         return
@@ -269,14 +298,20 @@ events:SetScript("OnEvent", function(self, event, arg1)
     ns.Refresh()
 end)
 
--- Note when we were last online, so a crash or disconnect still counts as
--- time away. Runs even while the panel is hidden.
-local sinceSeen = 0
+-- Every few seconds: note when we were last online (so a crash or disconnect
+-- still counts as time away) and refresh the display so the ETA and per-hour
+-- rates keep moving between XP gains.
+local TICK_SECONDS = 5
+local sinceTick = 0
 events:SetScript("OnUpdate", function(_, dt)
-    sinceSeen = sinceSeen + dt
-    if sinceSeen >= 5 then
-        sinceSeen = 0
-        if ns.session.start then ns.session.lastSeen = time() end
+    sinceTick = sinceTick + dt
+    if sinceTick < TICK_SECONDS then return end
+    sinceTick = 0
+    if ns.session.start then ns.session.lastSeen = time() end
+    if ns.db and ns.db.shown then
+        ns.Refresh()
+        -- Catch frames that Blizzard re-anchored back under the bar.
+        if ns.db.style ~= "panel" then ns.UpdateUIPush() end
     end
 end)
 
@@ -297,16 +332,19 @@ SlashCmdList.TALLY = function(msg)
         ns.db.locked = not ns.db.locked
         ns.Print(ns.db.locked and "panel locked." or "panel unlocked.")
     elseif msg == "show" then
-        ns.SetPanelShown(true)
+        ns.SetDisplayShown(true)
     elseif msg == "hide" then
-        ns.SetPanelShown(false)
+        ns.SetDisplayShown(false)
     elseif msg == "toggle" then
-        ns.SetPanelShown(not ns.frame:IsShown())
+        ns.SetDisplayShown(not ns.db.shown)
+    elseif msg == "bar" or msg == "bottom" or msg == "panel" then
+        ns.db.style = msg
+        ns.OnSettingChanged("style")
     elseif msg == "center" then
         ns.db.point = { "CENTER", "UIParent", "CENTER", 0, 0 }
-        ns.frame:ClearAllPoints()
-        ns.frame:SetPoint(unpack(ns.db.point))
+        ns.panel:ClearAllPoints()
+        ns.panel:SetPoint(unpack(ns.db.point))
     else
-        ns.Print("/tally (options) | reset | lock | show | hide | toggle | center")
+        ns.Print("/tally (options) | reset | lock | show | hide | toggle | bar | bottom | panel | center")
     end
 end

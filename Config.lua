@@ -47,26 +47,29 @@ local rateLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
 rateLabel:SetPoint("TOPLEFT", 20, Next(22))
 rateLabel:SetText("Base the XP rate on the last:")
 
--- Radio-style choices for ns.db.rateWindow (seconds, 0 = whole session).
+-- A row of radio buttons setting ns.db[key] to one of `choices` ({value, label}).
 local radios = {}
-local RATE_WINDOWS = {
-    { 300, "5 min" }, { 600, "10 min" }, { 1800, "30 min" }, { 3600, "1 hour" }, { 0, "Whole session" },
-}
-local radioY = Next()
-for i, choice in ipairs(RATE_WINDOWS) do
-    local rb = CreateFrame("CheckButton", nil, panel, "UIRadioButtonTemplate")
-    rb:SetPoint("TOPLEFT", 20 + (i - 1) * 90, radioY - 4)
-    rb.label = rb:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    rb.label:SetPoint("LEFT", rb, "RIGHT", 4, 1)
-    rb.label:SetText(choice[2])
-    rb.value = choice[1]
-    rb:SetScript("OnClick", function(self)
-        ns.db.rateWindow = self.value
-        ns.RefreshConfig()
-        ns.OnSettingChanged("rateWindow")
-    end)
-    radios[#radios + 1] = rb
+local function NewRadioRow(key, choices, y, spacing)
+    for i, choice in ipairs(choices) do
+        local rb = CreateFrame("CheckButton", nil, panel, "UIRadioButtonTemplate")
+        rb:SetPoint("TOPLEFT", 20 + (i - 1) * spacing, y - 4)
+        rb.label = rb:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+        rb.label:SetPoint("LEFT", rb, "RIGHT", 4, 1)
+        rb.label:SetText(choice[2])
+        rb.key, rb.value = key, choice[1]
+        rb:SetScript("OnClick", function(self)
+            ns.db[self.key] = self.value
+            ns.RefreshConfig()
+            ns.OnSettingChanged(self.key)
+        end)
+        radios[#radios + 1] = rb
+    end
 end
+
+-- Rate window in seconds, 0 = whole session.
+NewRadioRow("rateWindow", {
+    { 300, "5 min" }, { 600, "10 min" }, { 1800, "30 min" }, { 3600, "1 hour" }, { 0, "Whole session" },
+}, Next(), 90)
 
 NewCheck("Show kills to level (average of your last 5 kills)", "showKills", Next())
 
@@ -86,8 +89,16 @@ local heading2 = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
 heading2:SetPoint("TOPLEFT", 16, Next(22))
 heading2:SetText("General")
 
+local styleLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+styleLabel:SetPoint("TOPLEFT", 20, Next(22))
+styleLabel:SetText("Display style:")
+NewRadioRow("style", {
+    { "panel", "Floating panel" }, { "bar", "Bar across the top" }, { "bottom", "Bar across the bottom" },
+}, Next(), 160)
+NewCheck("Move other UI out of the way of the bar", "pushUI", Next())
+
 NewCheck("Show minimap button", "showMinimap", Next())
-NewCheck("Lock panel position", "locked", Next())
+NewCheck("Lock floating panel position", "locked", Next())
 
 Next(8)
 local reset = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
@@ -103,7 +114,7 @@ end)
 function ns.RefreshConfig()
     if not ns.db then return end
     for _, rb in ipairs(radios) do
-        rb:SetChecked(ns.db.rateWindow == rb.value)
+        rb:SetChecked(ns.db[rb.key] == rb.value)
     end
     for _, cb in ipairs(checks) do
         cb:SetChecked(ns.db[cb.key])

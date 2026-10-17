@@ -10,7 +10,16 @@ The panel shows:
 - **Gold** (optional): current gold, gained or lost this session, and gold per hour
 - **Honor** (optional): PvP rank progress, today's honorable kills and this week's honor
 
-Hover the panel for session time, session average, kills and rested XP. Drag it to move it.
+Hover it for session time, session average, kills and rested XP.
+
+## Display styles
+
+- **Floating panel** (default): a small box you can drag anywhere.
+- **Bar across the top** or **bottom**: everything on one line across the edge of the screen, with a thin XP progress line (and rested XP) along its inner edge.
+
+Switch in options or with `/tally panel`, `/tally bar` (top) and `/tally bottom`.
+
+In bar mode, default UI frames that sit under the bar are moved out of its way: the minimap cluster, buffs and so on move down for a top bar; the action bars, micro menu, bags and XP/reputation bars move up for a bottom bar. They're put back when you switch to the panel or hide the bar. While Edit Mode is open they go back to their real positions so you can edit them. Turn this off with "Move other UI out of the way of the bar" in options.
 
 ## Sessions
 
@@ -28,7 +37,7 @@ The session is saved per character, so it carries on through `/reload` and short
 
 ## Options
 
-Open with `/tally`, the minimap button, or Options → AddOns → Tally. Choose the rate window, toggle kills to level, professions (primary/secondary), gold, honor, the minimap button and the panel lock, or reset the session.
+Open with `/tally`, the minimap button, or Options → AddOns → Tally. Choose the rate window and display style, toggle kills to level, professions (primary/secondary), gold, honor, the minimap button and the panel lock, or reset the session.
 
 ## Commands
 
@@ -37,7 +46,8 @@ Open with `/tally`, the minimap button, or Options → AddOns → Tally. Choose 
 | `/tally` | Open options |
 | `/tally reset` | Restart the session (rates and ETA) |
 | `/tally lock` | Toggle dragging |
-| `/tally show` / `hide` / `toggle` | Show or hide the panel |
+| `/tally show` / `hide` / `toggle` | Show or hide the panel or bar |
+| `/tally panel` / `bar` / `bottom` | Switch display style |
 | `/tally center` | Move the panel back to the middle of the screen |
 
 ## Deploying

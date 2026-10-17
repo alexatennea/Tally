@@ -55,14 +55,14 @@ button:SetScript("OnClick", function(_, mouseButton)
     if mouseButton == "RightButton" then
         ns.OpenConfig()
     else
-        ns.SetPanelShown(not ns.frame:IsShown())
+        ns.SetDisplayShown(not ns.db.shown)
     end
 end)
 
 button:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_LEFT")
     GameTooltip:AddLine("Tally")
-    GameTooltip:AddLine("Left-click: show / hide panel", 1, 1, 1)
+    GameTooltip:AddLine("Left-click: show / hide", 1, 1, 1)
     GameTooltip:AddLine("Right-click: options", 1, 1, 1)
     GameTooltip:AddLine("Drag: move button", 0.6, 0.6, 0.6)
     GameTooltip:Show()

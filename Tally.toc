@@ -2,12 +2,14 @@
 ## Title: Tally
 ## Notes: Time to level, plus professions, gold and honor at a glance.
 ## Author: void
-## Version: 0.3.0
+## Version: 0.4.0
 ## DefaultState: Enabled
 ## SavedVariables: TallyDB
 ## SavedVariablesPerCharacter: TallyCharDB
 ## IconTexture: Interface\Icons\inv_misc_pocketwatch_01
 Core.lua
+Data.lua
 Panel.lua
+Bar.lua
 Minimap.lua
 Config.lua

@@ -11,6 +11,7 @@ local BAR_H     = 24
 local XP_LINE_H = 3
 local SIZE      = 12
 local GAP       = 12   -- space either side of each separator
+local JOIN_GAP  = 16   -- space between items in the same section (no separator)
 local textY     = 0    -- centres text beside the XP line; set by PositionBar
 
 local bar = CreateFrame("Frame", "TallyBar", UIParent)
@@ -95,24 +96,36 @@ local function GetSegment(i)
     return seg
 end
 
-local function SetSegments(texts)
+-- `items` are strings, or { text = ..., join = true } to sit in the same
+-- section as the previous item (no separator). Returns the text regions.
+local function SetSegments(items)
     local x = 8 + 15 + 5 + title:GetStringWidth()
-    for i, text in ipairs(texts) do
+    local regions = {}
+    for i, item in ipairs(items) do
         local seg = GetSegment(i)
-        seg.sep:ClearAllPoints()
-        seg.sep:SetPoint("LEFT", bar, "LEFT", x + GAP, textY)
-        x = x + GAP * 2 + 1
+        local text, join = item, false
+        if type(item) == "table" then text, join = item.text, item.join end
+        if join then
+            seg.sep:Hide()
+            x = x + JOIN_GAP
+        else
+            seg.sep:ClearAllPoints()
+            seg.sep:SetPoint("LEFT", bar, "LEFT", x + GAP, textY)
+            seg.sep:Show()
+            x = x + GAP * 2 + 1
+        end
         seg.text:SetText(text)
         seg.text:ClearAllPoints()
         seg.text:SetPoint("LEFT", bar, "LEFT", x, textY)
-        x = x + seg.text:GetStringWidth()
-        seg.sep:Show()
         seg.text:Show()
+        x = x + seg.text:GetStringWidth()
+        regions[i] = seg.text
     end
-    for i = #texts + 1, #segments do
+    for i = #items + 1, #segments do
         segments[i].sep:Hide()
         segments[i].text:Hide()
     end
+    return regions
 end
 
 ---------------------------------------------------------------------------
@@ -146,13 +159,14 @@ function ns.RefreshBar()
             "  " .. ns.FormatNumber(xp.perHour) .. MUTED_HEX .. " /hr|r"
     end
 
-    local skills = ns.GetShownProfessions()
-    if #skills > 0 then
-        local parts = {}
-        for _, skill in ipairs(skills) do
-            parts[#parts + 1] = SKILL_HEX .. skill.name .. "|r " .. skill.rank .. MUTED_HEX .. "/" .. skill.max .. "|r"
-        end
-        texts[#texts + 1] = table.concat(parts, "    ")
+    -- Each profession is its own item so it can be clicked to open.
+    local professionIndex = {}
+    for i, skill in ipairs(ns.GetShownProfessions()) do
+        texts[#texts + 1] = {
+            text = SKILL_HEX .. skill.name .. "|r " .. skill.rank .. MUTED_HEX .. "/" .. skill.max .. "|r",
+            join = i > 1,
+        }
+        professionIndex[#texts] = skill
     end
 
     if ns.db.showGold then
@@ -170,7 +184,12 @@ function ns.RefreshBar()
         texts[#texts + 1] = honor
     end
 
-    SetSegments(texts)
+    local regions = SetSegments(texts)
+    local clickTargets = {}
+    for index, skill in pairs(professionIndex) do
+        clickTargets[#clickTargets + 1] = { region = regions[index], name = skill.name, spell = ns.ProfessionSpell(skill.name) }
+    end
+    ns.SetProfessionClickTargets(clickTargets)
 end
 
 bar:SetScript("OnEnter", function(self)

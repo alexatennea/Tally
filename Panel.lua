@@ -182,6 +182,7 @@ end
 
 local function RefreshProfessions(y)
     local skills = ns.GetShownProfessions()
+    local clickTargets = {}
     for i, skill in ipairs(skills) do
         local row = GetSkillRow(i)
         row.bar:SetMinMaxValues(0, skill.max)
@@ -189,10 +190,12 @@ local function RefreshProfessions(y)
         row.left:SetText(skill.name)
         row.right:SetText(skill.rank .. MUTED_HEX .. " / " .. skill.max .. "|r")
         y = Place(row, y + (i == 1 and SECTION_GAP or ROW_GAP), ROW_BAR_H)
+        clickTargets[i] = { region = row, name = skill.name, spell = ns.ProfessionSpell(skill.name) }
     end
     for i = #skills + 1, #skillRows do
         skillRows[i]:Hide()
     end
+    ns.SetProfessionClickTargets(clickTargets)
     return y
 end
 
@@ -250,6 +253,7 @@ frame:SetScript("OnDragStop", function(self)
     self:StopMovingOrSizing()
     local point, _, relPoint, x, y = self:GetPoint()
     ns.db.point = { point, "UIParent", relPoint, x, y }
+    ns.Refresh()  -- moves the profession click buttons along with it
 end)
 
 frame:SetScript("OnEnter", function(self)

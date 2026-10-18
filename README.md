@@ -6,7 +6,7 @@ The panel shows:
 - **Time to level**: remaining XP ÷ your XP rate over the chosen rate window
 - **XP bar**: XP to go, % through the level and kills to level, with rested XP shown in purple
 - **Session**: XP gained this session, and XP per hour over the rate window
-- **Professions** (optional): a bar per primary and/or secondary profession with current/max rank
+- **Professions** (optional): a bar per primary and/or secondary profession with current/max rank. Click one to open its window (Fishing isn't clickable, since that would start fishing)
 - **Gold** (optional): current gold, gained or lost this session, and gold per hour
 - **Honor** (optional): PvP rank progress, today's honorable kills and this week's honor
 
